@@ -56,12 +56,12 @@ rule lexer = parse
   | "-" { Minus }
   | "*" { Times }
   | "/" { Divide }
-  | "=" { Equal }
-  | "<>" { NonEq }
-  | "<" { Lower }
-  | "<=" { LowerEq }
-  | ">" { Greater }
-  | ">=" { GreaterEq }
+  | "=" { Eq }
+  | "<>" { Neq }
+  | "<" { Lt }
+  | "<=" { Le }
+  | ">" { Gt }
+  | ">=" { Ge }
   | "&" { Ampersand }
   | "|" { Pipe }
   | ":=" { ColonEq }

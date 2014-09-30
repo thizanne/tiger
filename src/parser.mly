@@ -7,7 +7,7 @@
 %token Comma Colon Semi Dot
 %token LPar RPar LBracket RBracket LBrace RBrace
 %token Plus Minus Times Divide
-%token Equal NonEq Lower LowerEq Greater GreaterEq
+%token Eq Neq Lt Le Gt Ge
 %token Ampersand Pipe ColonEq
 %token Eof
 
@@ -21,7 +21,7 @@
 %right LBracket
 %left Pipe
 %left Ampersand
-%nonassoc Equal NonEq Greater GreaterEq Lower LowerEq
+%nonassoc Eq Neq Gt Ge Lt Le
 %left Plus Minus
 %left Times Divide
 %left UnaryMinus
@@ -46,7 +46,7 @@ dec :
 | fundec { }
 
 tydec :
-| Type Id Equal ty { }
+| Type Id Eq ty { }
 
 ty :
 | Id { }
@@ -64,8 +64,8 @@ vardec :
 | Var Id Colon Id ColonEq exp { }
 
 fundec :
-| Function Id LPar tyfields RPar Equal exp { }
-| Function Id LPar tyfields RPar Colon Id Equal exp { }
+| Function Id LPar tyfields RPar Eq exp { }
+| Function Id LPar tyfields RPar Colon Id Eq exp { }
 
 lvalue :
 | Id { } %prec LBracket
@@ -82,7 +82,7 @@ exp :
 | exp op exp { }
 | String { }
 | Id LPar separated_list(Comma, exp) RPar { }
-| Id LBrace separated_list(Comma, field_affect) RBrace { }
+| Id LBrace separated_list(Comma, field_assign) RBrace { }
 | Id LBracket exp RBracket Of exp { } %prec LBracket
 | lvalue ColonEq exp { }
 | If exp Then exp { } %prec Else
@@ -92,19 +92,19 @@ exp :
 | Break { }
 | Let decs In separated_list(Semi, exp) End { }
 
-field_affect :
-| Id Equal exp { }
+field_assign :
+| Id Eq exp { }
 
 %inline op :
 | Plus {  }
 | Minus { }
 | Times { }
 | Divide { }
-| Equal { }
-| NonEq { }
-| Greater { }
-| GreaterEq { }
-| Lower { }
-| LowerEq { }
+| Eq { }
+| Neq { }
+| Gt { }
+| Ge { }
+| Lt { }
+| Le { }
 | Ampersand { }
 | Pipe { }
