@@ -21,14 +21,7 @@ type ty =
   | RecordTy of field list
   | ArrayTy of Symbol.t Location.loc
 
-type var =
-  | SimpleVar of Symbol.t Location.loc
-  | FieldVar of var Location.loc *
-                Symbol.t Location.loc
-  | SubscriptVar of var Location.loc *
-                    exp Location.loc
-
-and exp =
+type exp =
   | Var of var Location.loc
   | Nil of unit Location.loc
   | Int of int Location.loc
@@ -54,31 +47,38 @@ and exp =
            exp Location.loc * (* to *)
            exp Location.loc (* body *)
   | Break of unit Location.loc
-  | Let of dec Location.loc list *
+  | Let of dec list *
            exp Location.loc
-  | Array of Symbol.t Location.loc *
+  | Array of Symbol.t Location.loc * (* type *)
              exp Location.loc * (* size *)
              exp Location.loc (* init *)
+and var =
+  | SimpleVar of Symbol.t Location.loc
+  | FieldVar of var Location.loc *
+                Symbol.t Location.loc
+  | SubscriptVar of var Location.loc *
+                    exp Location.loc
 
 and dec =
-  | FunctionDec of fundec list
-  | VarDec of vardec
-  | TypeDec of typedec
+  | FunctionDec of fundec Location.loc list
+  | VarDec of vardec Location.loc
+  | TypeDec of typedec Location.loc list
 
 and fundec = {
   fun_name : Symbol.t Location.loc;
   params : field list;
+  result_typ : Symbol.t Location.loc option;
   body : exp;
 }
 
 and vardec = {
   var_name : Symbol.t Location.loc;
   escape : bool ref;
-  typ : Symbol.t Location.loc;
+  var_typ : Symbol.t Location.loc option;
   init : exp;
 }
 
 and typedec = {
   type_name : Symbol.t Location.loc;
-  ty : ty;
+  typ : ty;
 }
