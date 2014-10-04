@@ -1,22 +1,24 @@
-type t = int
+type t = int * string
 
-let symbol, name =
-  let n = ref (-1) in
+let symbol =
   let table = Hashtbl.create 128 in
+  let n = ref (-1) in
+  function name ->
+    try
+      Hashtbl.find table name, name
+    with Not_found ->
+      incr n;
+      Hashtbl.add table name !n;
+      !n, name
 
-  (function name ->
-    incr n;
-    Hashtbl.add table !n name;
-    !n),
-
-  (function symbol ->
-    Hashtbl.find table symbol)
+let name = snd
 
 module Ord = struct
   type symbol = t
   type t = symbol
 
-  let compare = Pervasives.compare
+  let compare (n1, _sym1) (n2, _sym2) =
+    Pervasives.compare n1 n2
 end
 
 module Table = Map.Make (Ord)
