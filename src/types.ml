@@ -19,7 +19,7 @@ let rec actual : type a. a t -> actual t = function ty ->
   | Name (_, {contents = Some t}) -> actual t
   | Int -> ty
   | String -> ty
-  | Record (_, _) -> ty
-  | Array (_, _) -> ty
+  | Record _ -> ty
+  | Array _ -> ty
   | Nil -> ty
   | Unit -> ty
