@@ -1,16 +1,14 @@
 type unique
 
-type actual
+type t =
+  | Int
+  | String
+  | Record of (Symbol.t * t) list * unique
+  | Array of t * unique
+  | Nil
+  | Unit
+  | Name of Symbol.t * t option ref
 
-type _ t =
-  | Int : actual t
-  | String : actual t
-  | Record : (Symbol.t * 'a t) list * unique -> actual t
-  | Array : 'a t * unique -> actual t
-  | Nil : actual t
-  | Unit : actual t
-  | Name : Symbol.t * 'a t option ref -> 'b t
+val actual : t -> t
 
-type actual_type = actual t
-
-val actual : 'a t -> actual t
+val to_string : t -> string
