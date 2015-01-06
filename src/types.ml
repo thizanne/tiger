@@ -1,10 +1,10 @@
-type unique = unit ref
+module U = Unique
 
 type t =
   | Int
   | String
-  | Record of (Symbol.t * t) list * unique
-  | Array of t * unique
+  | Record of (Symbol.t * t) list * Unique.t
+  | Array of t * Unique.t
   | Nil
   | Unit
   | Name of Symbol.t * t option ref
