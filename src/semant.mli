@@ -4,13 +4,11 @@ type tenv = Types.t Symbol.Table.t
 
 type expty = {
   exp : Translate.exp;
-  ty : Types.ty;
+  ty : Types.t;
 }
 
-val trans_var : venv -> tenv -> Syntax.var -> expty
-
-val trans_exp : venv -> tenv -> Syntax.exp -> expty
+val trans_exp : venv -> tenv -> Syntax.exp Location.loc -> expty
 
 val trans_dec : venv -> tenv -> Syntax.dec -> venv * tenv
 
-val trans_ty : tenv -> Syntax.ty -> Types.ty
+val trans_ty : tenv -> Syntax.ty -> Types.t
