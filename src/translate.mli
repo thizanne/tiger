@@ -1,1 +1,1 @@
-type exp
+type exp = unit
