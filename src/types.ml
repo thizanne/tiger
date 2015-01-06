@@ -1,3 +1,5 @@
+open Printf
+
 module U = Unique
 
 type t =
@@ -20,11 +22,11 @@ let rec actual = function
   | Unit
     as t -> t
 
-let to_string = function
+let rec to_string = function
   | Int -> "Int"
   | String -> "String"
-  | Record _ -> "Record"
-  | Array _ -> "Array"
   | Nil -> "Nil"
   | Unit -> "Unit"
   | Name (sym, _) -> Symbol.name sym
+  | Record (_, u) -> sprintf "Record %s" (U.to_string u)
+  | Array (t, u) -> sprintf "Array %s %s" (to_string t) (U.to_string u)
