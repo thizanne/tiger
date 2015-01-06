@@ -10,7 +10,7 @@ type t =
   | Name of Symbol.t * t option ref
 
 let rec actual = function
-  | Name (sym, {contents = None}) -> assert false
+  | Name (sym, {contents = None}) -> failwith "actual"
   | Name (_, {contents = Some t}) -> actual t
   | Int
   | String
