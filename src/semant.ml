@@ -14,15 +14,15 @@ type expty = {
   ty : Types.t;
 }
 
-let rec trans_exp venv (tenv : tenv) exp =
+let rec trans_exp venv tenv exp =
   let open Syntax in
 
   let rec check_ty ty exp =
     let { ty = ty'; _ } = trexp exp in
     if ty <> ty'
     then
-      type_error exp.loc
-      @@ sprintf "%s expected, found %s" (T.to_string ty) (T.to_string ty')
+      type_error exp.loc @@
+      sprintf "%s expected, found %s" (T.to_string ty) (T.to_string ty')
 
   and check_int exp = check_ty T.Int exp
 
@@ -53,8 +53,8 @@ let rec trans_exp venv (tenv : tenv) exp =
       if vty = ety
       then { ty = vty; exp = () }
       else
-        type_error exp.loc
-        @@ sprintf "Trying to affect a %s to a %s variable"
+        type_error exp.loc @@
+        sprintf "Trying to affect a %s to a variable of type %s"
           (T.to_string ety) (T.to_string vty)
     | If (cond, iftrue, iffalse) ->
       check_int cond;
@@ -66,8 +66,8 @@ let rec trans_exp venv (tenv : tenv) exp =
           if tty = fty
           then { ty = tty; exp = () }
           else
-            type_error exp.loc
-            @@ sprintf
+            type_error exp.loc @@
+            sprintf
               "Different types in the branches of a condition: %s and %s"
               (T.to_string tty) (T.to_string fty)
       end
@@ -93,11 +93,13 @@ let rec trans_exp venv (tenv : tenv) exp =
         | T.Array (ty, _) ->
           if ity = ty then { ty = tty; exp = () }
           else
-            type_error init.loc
-            @@ sprintf
+            type_error init.loc @@
+            sprintf
               "Wrong type for initial value of an array: found %s, expected %s"
               (T.to_string ity) (T.to_string ty)
-        | _ -> type_error typ.loc @@ sprintf "Not an array type: %s" (T.to_string tty)
+        | _ ->
+          type_error typ.loc @@
+          sprintf "Not an array type: %s" (T.to_string tty)
       end
     | Record (typ, ifields) ->
       let rty = Symbol.Table.find typ.item tenv in
@@ -113,14 +115,15 @@ let rec trans_exp venv (tenv : tenv) exp =
                    (Symbol.name isym.item) (Symbol.name sym))
             fields ifields;
           { exp = (); ty = rty }
-        | _ -> type_error typ.loc @@ sprintf "Not a record type: %s" (T.to_string rty)
+        | _ -> type_error typ.loc @@
+          sprintf "Not a record type: %s" (T.to_string rty)
       end
     | Call (f, args) ->
       let fentry = Symbol.Table.find f.item venv in
       begin match fentry with
         | Env.VarEntry _ ->
-          type_error f.loc
-          @@ sprintf "%s is not a function, it cannot be applied"
+          type_error f.loc @@
+          sprintf "%s is not a function, it cannot be applied"
             (Symbol.name f.item)
         | Env.FunEntry (formals, result) ->
           List.iter2 check_ty formals args;
