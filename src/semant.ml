@@ -9,6 +9,22 @@ type venv = Env.entry Symbol.Table.t
 
 type tenv = Types.t Symbol.Table.t
 
+let env_find env_name sym env =
+  try
+    Symbol.Table.find sym.item env
+  with
+    Not_found ->
+    name_error sym.loc @@
+    sprintf "Unknown %s: %s"
+      env_name
+      (Symbol.name sym.item)
+
+let venv_find = env_find "value"
+
+let fenv_find = env_find "function"
+
+let tenv_find = env_find "type"
+
 type expty = {
   exp : Translate.exp;
   ty : Types.t;
@@ -88,7 +104,7 @@ let rec trans_exp venv tenv exp =
     | Array (typ, size, init) ->
       check_int size;
       let { ty = ity; _ } = trexp init in
-      let tty = Symbol.Table.find typ.item tenv in
+      let tty = tenv_find typ tenv in
       begin match tty with
         | T.Array (ty, _) ->
           if ity = ty then { ty = tty; exp = () }
@@ -102,7 +118,7 @@ let rec trans_exp venv tenv exp =
           sprintf "Not an array type: %s" (T.to_string tty)
       end
     | Record (typ, ifields) ->
-      let rty = Symbol.Table.find typ.item tenv in
+      let rty = tenv_find typ tenv in
       begin match rty with
         | T.Record (fields, _uniq) ->
           List.iter2
@@ -119,7 +135,7 @@ let rec trans_exp venv tenv exp =
           sprintf "Not a record type: %s" (T.to_string rty)
       end
     | Call (f, args) ->
-      let fentry = Symbol.Table.find f.item venv in
+      let fentry = fenv_find f venv in
       begin match fentry with
         | Env.VarEntry _ ->
           type_error f.loc @@
