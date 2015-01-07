@@ -146,7 +146,44 @@ let rec trans_exp venv tenv exp =
           { ty = result; exp = () }
       end
 
-  and trvar var = assert false
+  and trvar var = match var.item with
+    | SimpleVar var ->
+      let ty = begin match venv_find var venv with
+        | Env.VarEntry ty -> ty
+        | Env.FunEntry _ ->
+          type_error var.loc @@
+          sprintf "%s is a function, expected a variable" (Symbol.name var.item)
+      end in
+      { ty; exp = () }
+    | FieldVar (var, field) ->
+      let { ty; _ } = trvar var in
+      begin match ty with
+        | T.Record (fields, _) ->
+          begin
+            try
+              let field_ty = List.assoc field.item fields in
+              { ty = field_ty; exp = () }
+            with Not_found ->
+              name_error field.loc @@
+              sprintf "Unknown field %s for type %s"
+                (Symbol.name field.item) (T.to_string ty)
+          end
+        | _ ->
+          type_error var.loc @@
+          sprintf "Wrong field access: %s is not a record type"
+            (T.to_string ty)
+      end
+    | SubscriptVar (var, sub) ->
+      let { ty; _ } = trvar var in
+      begin match ty with
+        | T.Array (typ, _) ->
+          check_int sub;
+          { ty = typ; exp = () }
+        | _ ->
+          type_error var.loc @@
+          sprintf "Wrong subscript access: %s is not an array type"
+            (T.to_string ty)
+      end
 
   in trexp exp
 
