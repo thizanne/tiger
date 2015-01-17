@@ -195,7 +195,7 @@ tyfield :
 | name = symbol Colon typ = symbol { S.{ name; typ; escape = ref true  } }
 
 vardec :
-| Var var_name = symbol ColonEq init = exp {
+| Var var_name = symbol ColonEq init = loc(exp) {
     S.{
       var_name;
       escape = ref true;
@@ -203,7 +203,7 @@ vardec :
       init;
     }
   }
-| Var var_name = symbol Colon var_typ = symbol ColonEq init = exp {
+| Var var_name = symbol Colon var_typ = symbol ColonEq init = loc(exp) {
     S.{
       var_name;
       escape = ref true;
@@ -213,7 +213,7 @@ vardec :
   }
 
 %inline fundec :
-| Function fun_name = symbol LPar params = tyfields RPar Eq body = exp {
+| Function fun_name = symbol LPar params = tyfields RPar Eq body = loc(exp) {
     S.{
       fun_name;
       params;
@@ -222,7 +222,7 @@ vardec :
     }
   }
 | Function fun_name = symbol LPar params = tyfields RPar
-    Colon result_typ = symbol Eq body = exp {
+    Colon result_typ = symbol Eq body = loc(exp) {
     S.{
       fun_name;
       params;

@@ -68,14 +68,14 @@ and fundec = {
   fun_name : Symbol.t Location.loc;
   params : field list;
   result_typ : Symbol.t Location.loc option;
-  body : exp;
+  body : exp Location.loc;
 }
 
 and vardec = {
   var_name : Symbol.t Location.loc;
   escape : bool ref;
   var_typ : Symbol.t Location.loc option;
-  init : exp;
+  init : exp Location.loc;
 }
 
 and typedec = {
