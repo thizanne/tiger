@@ -45,6 +45,8 @@ let trans_ty tenv = function
     Types.Record (fields, unique)
 
 let trans_fun venv tenv { item = fundec; loc } =
+  (* Check the body has the right type *)
+
   let ret_type = match fundec.S.result_typ with
     | None -> Types.Unit
     | Some ty -> tenv_find ty tenv
