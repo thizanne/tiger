@@ -1,5 +1,3 @@
-type unique
-
 type t =
   | Int
   | String
