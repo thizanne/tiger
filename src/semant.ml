@@ -30,6 +30,49 @@ type expty = {
   ty : Types.t;
 }
 
+let trans_ty tenv = function
+  | S.NameTy ty ->
+    tenv_find ty tenv
+  | S.ArrayTy ty ->
+    Types.Array (tenv_find ty tenv, Unique.create ())
+  | S.RecordTy fields ->
+    let unique = Unique.create () in
+    let fields =
+      List.map
+        (fun { S.name; escape; typ } ->
+           name.item, tenv_find typ tenv)
+    fields in
+    Types.Record (fields, unique)
+
+let trans_fun venv tenv { item = fundec; loc } =
+  let ret_type = match fundec.S.result_typ with
+    | None -> Types.Unit
+    | Some ty -> tenv_find ty tenv
+  in
+
+  let params =
+    List.map
+      (fun { S.name; escape; typ } ->
+         name.item, tenv_find typ tenv)
+      fundec.S.params
+  in
+
+  let venv' =
+    Symbol.Table.add
+      fundec.S.fun_name.item
+      (Env.FunEntry (List.map snd params, ret_type))
+      venv
+  in
+
+  let venv'' =
+    List.fold_left
+      (fun env_acc (name, typ) ->
+         Symbol.Table.add name (Env.VarEntry typ) env_acc)
+      venv'
+      params
+  in
+  venv''
+
 let rec trans_exp venv tenv exp =
   let open Syntax in
 
@@ -187,11 +230,37 @@ let rec trans_exp venv tenv exp =
 
   in trexp exp
 
-and trans_dec dec = assert false
+and trans_dec venv tenv dec =
+  let open Syntax in
+  match dec with
+  | VarDec var ->
+    let var = var.item in
+    let { ty; exp } = trans_exp venv tenv var.init in
+    begin match var.var_typ with
+      | None -> ()
+      | Some typ ->
+        let typ = tenv_find typ tenv in
+        if ty <> typ
+        then
+          type_error var.init.loc @@
+          sprintf "%s expected, found %s" (T.to_string ty) (T.to_string typ)
+    end;
+    Symbol.Table.add var.var_name.item (Env.VarEntry ty) venv, tenv
+  | TypeDec types ->
+    venv,
+    List.fold_left
+      (fun tenv_acc { item = { type_name; typ } } ->
+         Symbol.Table.add type_name.item (trans_ty tenv_acc typ) tenv_acc)
+      tenv
+      types
+  | FunctionDec funs ->
+    List.fold_left
+      (fun venv_acc dec -> trans_fun venv_acc tenv dec)
+      venv
+      funs,
+    tenv
 
 and trans_decs venv tenv =
   List.fold_left
     (fun (venv, tenv) dec -> trans_dec venv tenv dec)
     (venv, tenv)
-
-let trans_ty = assert false

@@ -1,7 +1,5 @@
 open Printf
 
-module U = Unique
-
 type t =
   | Int
   | String
@@ -28,5 +26,5 @@ let rec to_string = function
   | Nil -> "Nil"
   | Unit -> "Unit"
   | Name (sym, _) -> Symbol.name sym
-  | Record (_, u) -> sprintf "Record %s" (U.to_string u)
-  | Array (t, u) -> sprintf "Array %s %s" (to_string t) (U.to_string u)
+  | Record (_, u) -> sprintf "Record %s" (Unique.to_string u)
+  | Array (t, u) -> sprintf "Array %s %s" (to_string t) (Unique.to_string u)
