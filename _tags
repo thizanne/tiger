@@ -1,3 +1,6 @@
+true: annot, bin_annot
 true: use_menhir
+
+true: package(batteries)
 <src>: include
 <test>: include
