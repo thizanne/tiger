@@ -1,7 +1,7 @@
 open Error
 open Printf
-open Location
 
+module L = Location
 module T = Types
 module S = Syntax
 
@@ -11,13 +11,13 @@ type tenv = Types.t Symbol.Table.t
 
 let env_find env_name sym env =
   try
-    Symbol.Table.find sym.item env
+    Symbol.Table.find sym.L.item env
   with
     Not_found ->
-    name_error sym.loc @@
+    name_error sym.L.loc @@
     sprintf "Unknown %s: %s"
       env_name
-      (Symbol.name sym.item)
+      (Symbol.name sym.L.item)
 
 let venv_find = env_find "value"
 
@@ -40,11 +40,11 @@ let trans_ty tenv = function
     let fields =
       List.map
         (fun { S.name; escape; typ } ->
-           name.item, tenv_find typ tenv)
+           name.L.item, tenv_find typ tenv)
     fields in
     Types.Record (fields, unique)
 
-let trans_fun venv tenv { item = fundec; loc } =
+let trans_fun venv tenv { L.item = fundec; loc } =
   (* Check the body has the right type *)
 
   let ret_type = match fundec.S.result_typ with
@@ -55,13 +55,13 @@ let trans_fun venv tenv { item = fundec; loc } =
   let params =
     List.map
       (fun { S.name; escape; typ } ->
-         name.item, tenv_find typ tenv)
+         name.L.item, tenv_find typ tenv)
       fundec.S.params
   in
 
   let venv' =
     Symbol.Table.add
-      fundec.S.fun_name.item
+      fundec.S.fun_name.L.item
       (Env.FunEntry (List.map snd params, ret_type))
       venv
   in
@@ -82,7 +82,7 @@ let rec trans_exp venv tenv exp =
     let { ty = ty'; _ } = trexp exp in
     if ty <> ty'
     then
-      type_error exp.loc @@
+      type_error exp.L.loc @@
       sprintf "%s expected, found %s" (T.to_string ty) (T.to_string ty')
 
   and check_int exp = check_ty T.Int exp
@@ -90,7 +90,7 @@ let rec trans_exp venv tenv exp =
   and check_unit exp = check_ty T.Unit exp
 
   and trexp exp =
-    match exp.item with
+    match exp.L.item with
     | Var v ->
       trvar v
     | Nil _ ->
@@ -114,7 +114,7 @@ let rec trans_exp venv tenv exp =
       if vty = ety
       then { ty = vty; exp = () }
       else
-        type_error exp.loc @@
+        type_error exp.L.loc @@
         sprintf "Trying to affect a %s to a variable of type %s"
           (T.to_string ety) (T.to_string vty)
     | If (cond, iftrue, iffalse) ->
@@ -127,7 +127,7 @@ let rec trans_exp venv tenv exp =
           if tty = fty
           then { ty = tty; exp = () }
           else
-            type_error exp.loc @@
+            type_error exp.L.loc @@
             sprintf
               "Different types in the branches of a condition: %s and %s"
               (T.to_string tty) (T.to_string fty)
@@ -154,12 +154,12 @@ let rec trans_exp venv tenv exp =
         | T.Array (ty, _) ->
           if ity = ty then { ty = tty; exp = () }
           else
-            type_error init.loc @@
+            type_error init.L.loc @@
             sprintf
               "Wrong type for initial value of an array: found %s, expected %s"
               (T.to_string ity) (T.to_string ty)
         | _ ->
-          type_error typ.loc @@
+          type_error typ.L.loc @@
           sprintf "Not an array type: %s" (T.to_string tty)
       end
     | Record (typ, ifields) ->
@@ -168,36 +168,36 @@ let rec trans_exp venv tenv exp =
         | T.Record (fields, _uniq) ->
           List.iter2
             (fun (sym, typ) (isym, iexp) ->
-               if sym = isym.item
+               if sym = isym.L.item
                then check_ty typ iexp
                else
-                 name_error isym.loc
+                 name_error isym.L.loc
                  @@ sprintf "Wrong field %s: expected %s"
-                   (Symbol.name isym.item) (Symbol.name sym))
+                   (Symbol.name isym.L.item) (Symbol.name sym))
             fields ifields;
           { exp = (); ty = rty }
-        | _ -> type_error typ.loc @@
+        | _ -> type_error typ.L.loc @@
           sprintf "Not a record type: %s" (T.to_string rty)
       end
     | Call (f, args) ->
       let fentry = fenv_find f venv in
       begin match fentry with
         | Env.VarEntry _ ->
-          type_error f.loc @@
+          type_error f.L.loc @@
           sprintf "%s is not a function, it cannot be applied"
-            (Symbol.name f.item)
+            (Symbol.name f.L.item)
         | Env.FunEntry (formals, result) ->
           List.iter2 check_ty formals args;
           { ty = result; exp = () }
       end
 
-  and trvar var = match var.item with
+  and trvar var = match var.L.item with
     | SimpleVar var ->
       let ty = begin match venv_find var venv with
         | Env.VarEntry ty -> ty
         | Env.FunEntry _ ->
-          type_error var.loc @@
-          sprintf "%s is a function, expected a variable" (Symbol.name var.item)
+          type_error var.L.loc @@
+          sprintf "%s is a function, expected a variable" (Symbol.name var.L.item)
       end in
       { ty; exp = () }
     | FieldVar (var, field) ->
@@ -206,15 +206,15 @@ let rec trans_exp venv tenv exp =
         | T.Record (fields, _) ->
           begin
             try
-              let field_ty = List.assoc field.item fields in
+              let field_ty = List.assoc field.L.item fields in
               { ty = field_ty; exp = () }
             with Not_found ->
-              name_error field.loc @@
+              name_error field.L.loc @@
               sprintf "Unknown field %s for type %s"
-                (Symbol.name field.item) (T.to_string ty)
+                (Symbol.name field.L.item) (T.to_string ty)
           end
         | _ ->
-          type_error var.loc @@
+          type_error var.L.loc @@
           sprintf "Wrong field access: %s is not a record type"
             (T.to_string ty)
       end
@@ -225,7 +225,7 @@ let rec trans_exp venv tenv exp =
           check_int sub;
           { ty = typ; exp = () }
         | _ ->
-          type_error var.loc @@
+          type_error var.L.loc @@
           sprintf "Wrong subscript access: %s is not an array type"
             (T.to_string ty)
       end
@@ -236,7 +236,7 @@ and trans_dec venv tenv dec =
   let open Syntax in
   match dec with
   | VarDec var ->
-    let var = var.item in
+    let var = var.L.item in
     let { ty; exp } = trans_exp venv tenv var.init in
     begin match var.var_typ with
       | None -> ()
@@ -244,15 +244,15 @@ and trans_dec venv tenv dec =
         let typ = tenv_find typ tenv in
         if ty <> typ
         then
-          type_error var.init.loc @@
+          type_error var.init.L.loc @@
           sprintf "%s expected, found %s" (T.to_string ty) (T.to_string typ)
     end;
-    Symbol.Table.add var.var_name.item (Env.VarEntry ty) venv, tenv
+    Symbol.Table.add var.var_name.L.item (Env.VarEntry ty) venv, tenv
   | TypeDec types ->
     venv,
     List.fold_left
-      (fun tenv_acc { item = { type_name; typ } } ->
-         Symbol.Table.add type_name.item (trans_ty tenv_acc typ) tenv_acc)
+      (fun tenv_acc { L.item = { type_name; typ } } ->
+         Symbol.Table.add type_name.L.item (trans_ty tenv_acc typ) tenv_acc)
       tenv
       types
   | FunctionDec funs ->
