@@ -44,9 +44,7 @@ let trans_ty tenv = function
     fields in
     Types.Record (fields, unique)
 
-let trans_fun venv tenv { L.item = fundec; loc } =
-  (* Check the body has the right type *)
-
+let rec trans_fun venv tenv { L.item = fundec; loc } =
   let ret_type = match fundec.S.result_typ with
     | None -> Types.Unit
     | Some ty -> tenv_find ty tenv
@@ -59,23 +57,34 @@ let trans_fun venv tenv { L.item = fundec; loc } =
       fundec.S.params
   in
 
-  let venv' =
+  let venv_with_f =
     Symbol.Table.add
       fundec.S.fun_name.L.item
       (Env.FunEntry (List.map snd params, ret_type))
       venv
   in
 
-  let venv'' =
+  let venv_with_f_and_params =
     List.fold_left
       (fun env_acc (name, typ) ->
          Symbol.Table.add name (Env.VarEntry typ) env_acc)
-      venv'
+      venv_with_f
       params
   in
-  venv''
 
-let rec trans_exp venv tenv exp =
+  let { ty = body_type; _ } =
+    trans_exp venv_with_f_and_params tenv fundec.S.body in
+  let () =
+    if body_type <> ret_type
+    then
+      type_error loc @@
+      sprintf "The body of this function is of type %s, not %s"
+        (T.to_string body_type) (T.to_string ret_type)
+  in
+
+  venv_with_f_and_params
+
+and trans_exp venv tenv exp =
   let open Syntax in
 
   let rec check_ty ty exp =
